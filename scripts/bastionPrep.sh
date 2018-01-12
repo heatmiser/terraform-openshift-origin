@@ -6,7 +6,7 @@ echo $(date) " - Install base packages and update system to latest packages"
 
 yum -y install wget git net-tools bind-utils iptables-services bridge-utils bash-completion httpd-tools kexec-tools sos psacct
 yum -y update --exclude=WALinuxAgent
-yum -7 install centos-release-openshift-origin37.noarch
+yum -y install centos-release-openshift-origin37.noarch
 
 # Install OpenShift utilities
 echo $(date) " - Installing OpenShift utilities"
@@ -35,3 +35,4 @@ echo $(date) " - Updating ansible.cfg file"
 ansible-playbook ./updateansiblecfg.yaml
 
 echo $(date) " - Script Complete"
+
