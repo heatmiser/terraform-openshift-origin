@@ -396,7 +396,14 @@ openshift_master_cluster_hostname=$MASTERPUBLICIPHOSTNAME
 openshift_master_cluster_public_hostname=$MASTERPUBLICIPHOSTNAME
 openshift_master_cluster_public_vip=$MASTERPUBLICIPADDRESS
 
+# Enable service catalog
+openshift_enable_service_catalog=true
+# Enable template service broker (requires service catalog to be enabled, above)
+template_service_broker_install=true
+# Configure one of more namespaces whose templates will be served by the TSB
 openshift_template_service_broker_namespaces=['openshift']
+# Disable the OpenShift SDN plugin
+openshift_use_openshift_sdn=true
 
 # Enable HTPasswdPasswordIdentityProvider
 openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider', 'filename': '/etc/origin/master/htpasswd'}]
