@@ -18,9 +18,9 @@ else
     yum -y install cloud-utils-growpart.noarch
     yum -y update --exclude=WALinuxAgent
     yum -y install centos-release-openshift-origin37.noarch
-    yum -y install atomic-openshift-excluder atomic-openshift-docker-excluder
+    yum -y install origin-excluder origin-docker-excluder
 
-    atomic-openshift-excluder unexclude
+    origin-excluder unexclude
 
     # Grow Root File System
     echo $(date) " - Grow Root FS"
