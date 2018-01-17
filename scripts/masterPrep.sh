@@ -1,6 +1,10 @@
 #!/bin/bash
 echo $(date) " - Starting Master Prep Script"
 
+STORAGEACCOUNT=$1
+SUDOUSER=$2
+LOCATION=$3
+
 if [ -f /run/ostree-booted ]; then
     echo $(date) " - Atomic Host!!! No need for YUM package installs..."
 
@@ -26,6 +30,14 @@ else
     yum -y install origin-excluder origin-docker-excluder
 
     origin-excluder unexclude
+
+    # Only install Ansible and pyOpenSSL on Master-0 Node
+
+    if hostname -f|grep -- "-0" >/dev/null
+    then
+       echo $(date) " - Installing Ansible and pyOpenSSL"
+       yum -y --enablerepo=epel install ansible pyOpenSSL
+    fi
 
     # Grow Root File System
     echo $(date) " - Grow Root FS"
@@ -77,16 +89,31 @@ systemctl start docker
 
 if hostname -f|grep -- "-0" >/dev/null
 then
-cat <<EOF > /home/${SUDOUSER}/scgeneric1.yml
+cat <<EOF > /home/${SUDOUSER}/scunmanaged.yml
 kind: StorageClass
-apiVersion: storage.k8s.io/v1beta1
+apiVersion: storage.k8s.io/v1
 metadata:
   name: generic
   annotations:
-    storageclass.beta.kubernetes.io/is-default-class: "true"
+    storageclass.kubernetes.io/is-default-class: "true"
 provisioner: kubernetes.io/azure-disk
 parameters:
-  storageAccount: ${STORAGEACCOUNT1}
+  location: ${LOCATION}
+  storageAccount: ${STORAGEACCOUNT}
+EOF
+
+cat <<EOF > /home/${SUDOUSER}/scmanaged.yml
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: generic
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+provisioner: kubernetes.io/azure-disk
+parameters:
+  kind: managed
+  location: ${LOCATION}
+  storageaccounttype: Premium_LRS
 EOF
 
 fi
