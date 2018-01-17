@@ -6,6 +6,7 @@ set -e
 
 curruser=$(ps -o user= -p $$ | awk '{print $1}')
 echo "Executing script as user: $curruser"
+echo "args: $*"
 
 export SUDOUSER=$1
 export PASSWORD="$2"
