@@ -480,7 +480,7 @@ EOF
 
 for (( c=0; c<$MASTERCOUNT; c++ ))
 do
-  echo "$MASTER-$c openshift_node_labels=\"{'type': 'master', 'zone': 'default'}\" openshift_hostname=$MASTER-$c" >> /etc/ansible/hosts
+  echo "$MASTER-$c openshift_node_labels=\"{'type': 'master', 'zone': 'default'}\" openshift_hostname=$MASTER-$c openshift_scheduleable=false" >> /etc/ansible/hosts
 done
 
 # Loop to add Infra Nodes
