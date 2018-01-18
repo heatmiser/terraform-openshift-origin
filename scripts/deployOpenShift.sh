@@ -114,6 +114,21 @@ cat > /home/${SUDOUSER}/assignclusteradminrights.yml <<EOF
     shell: "oadm policy add-cluster-role-to-user cluster-admin {{ lookup('env','SUDOUSER') }} --config=/etc/origin/master/admin.kubeconfig"
 EOF
 
+# Run on all nodes - Set Root password on all nodes
+
+cat > /home/${SUDOUSER}/assignrootpassword.yml <<EOF
+---
+- hosts: nodes
+  gather_facts: no
+  become: yes
+  become_method: sudo
+  vars:
+    description: "Set password for Cockpit"
+  tasks:
+  - name: configure Cockpit password
+    shell: echo \"{{ lookup('env','PASSWORD') }}\"|passwd root --stdin
+EOF
+
 # Run on MASTER-0 node - configure registry to use Azure Storage
 # Create docker registry config based on Commercial Azure or Azure Government
 
@@ -199,7 +214,7 @@ EOF
 # Create Azure Cloud Provider configuration Playbook for Master Config
 
 cat > /home/${SUDOUSER}/setup-azure-master.yml <<EOF
-#!/usr/bin/ansible-playbook 
+#!/usr/bin/ansible-playbook
 - hosts: masters
   gather_facts: no
   serial: 1
@@ -271,7 +286,7 @@ EOF
 # Create Azure Cloud Provider configuration Playbook for Node Config (Master Nodes)
 
 cat > /home/${SUDOUSER}/setup-azure-node-master.yml <<EOF
-#!/usr/bin/ansible-playbook 
+#!/usr/bin/ansible-playbook
 - hosts: masters
   serial: 1
   gather_facts: no
@@ -326,7 +341,7 @@ EOF
 # Create Azure Cloud Provider configuration Playbook for Node Config (Non-Master Nodes)
 
 cat > /home/${SUDOUSER}/setup-azure-node.yml <<EOF
-#!/usr/bin/ansible-playbook 
+#!/usr/bin/ansible-playbook
 - hosts: nodes:!masters
   serial: 1
   gather_facts: no
@@ -454,6 +469,7 @@ openshift_hosted_metrics_public_url=https://metrics.$ROUTING/hawkular/metrics
 # Setup logging
 openshift_logging_install_logging=false
 #openshift_logging_es_pvc_dynamic=true
+openshift_logging_es_pvc_storage_class_name=generic
 openshift_logging_fluentd_nodeselector={"logging":"true"}
 openshift_logging_es_nodeselector={"type":"infra"}
 openshift_logging_kibana_nodeselector={"type":"infra"}
@@ -467,7 +483,7 @@ $MASTER-[0:${MASTERLOOP}]
 
 # host group for etcd
 [etcd]
-$MASTER-[0:${MASTERLOOP}] 
+$MASTER-[0:${MASTERLOOP}]
 
 [master0]
 $MASTER-0
@@ -480,7 +496,7 @@ EOF
 
 for (( c=0; c<$MASTERCOUNT; c++ ))
 do
-  echo "$MASTER-$c openshift_node_labels=\"{'type': 'master', 'zone': 'default'}\" openshift_hostname=$MASTER-$c openshift_scheduleable=false" >> /etc/ansible/hosts
+  echo "$MASTER-$c openshift_node_labels=\"{'type': 'master', 'zone': 'default'}\" openshift_hostname=$MASTER-$c" >> /etc/ansible/hosts
 done
 
 # Loop to add Infra Nodes
@@ -509,19 +525,19 @@ echo $(date) " - Cloning openshift-ansible repo for use in installation"
 
 runuser -l $SUDOUSER -c "git clone -b release-3.7 https://github.com/openshift/openshift-ansible /home/$SUDOUSER/openshift-ansible"
 
-echo $(date) " - Running network_manager.yml playbook" 
-DOMAIN=`domainname -d` 
+echo $(date) " - Running network_manager.yml playbook"
+DOMAIN=`domainname -d`
 
-# Setup NetworkManager to manage eth0 
-runuser -l $SUDOUSER -c "ansible-playbook openshift-ansible/playbooks/byo/openshift-node/network_manager.yml" 
+# Setup NetworkManager to manage eth0
+runuser -l $SUDOUSER -c "ansible-playbook openshift-ansible/playbooks/byo/openshift-node/network_manager.yml"
 
-echo $(date) " - Setting up NetworkManager on eth0" 
-# Configure resolv.conf on all hosts through NetworkManager 
+echo $(date) " - Setting up NetworkManager on eth0"
+# Configure resolv.conf on all hosts through NetworkManager
 
-runuser -l $SUDOUSER -c "ansible all -b -m service -a \"name=NetworkManager state=restarted\"" 
-sleep 5 
-runuser -l $SUDOUSER -c "ansible all -b -m command -a \"nmcli con modify eth0 ipv4.dns-search $DOMAIN\"" 
-runuser -l $SUDOUSER -c "ansible all -b -m service -a \"name=NetworkManager state=restarted\"" 
+runuser -l $SUDOUSER -c "ansible all -b -m service -a \"name=NetworkManager state=restarted\""
+sleep 5
+runuser -l $SUDOUSER -c "ansible all -b -m command -a \"nmcli con modify eth0 ipv4.dns-search $DOMAIN\""
+runuser -l $SUDOUSER -c "ansible all -b -m service -a \"name=NetworkManager state=restarted\""
 
 # Initiating installation of OpenShift Container Platform using Ansible Playbook
 echo $(date) " - Installing OpenShift Container Platform via Ansible Playbook"
@@ -571,10 +587,10 @@ then
 
 	echo $(date) "- Sleep for 120"
 
-sleep 120
+	sleep 120
 
-# Execute setup-azure-master and setup-azure-node playbooks to configure Azure Cloud Provider
-echo $(date) "- Configuring OpenShift Cloud Provider to be Azure"
+	# Execute setup-azure-master and setup-azure-node playbooks to configure Azure Cloud Provider
+	echo $(date) "- Configuring OpenShift Cloud Provider to be Azure"
 
 	runuser $SUDOUSER -c "ansible-playbook ~/setup-azure-master.yml"
 
@@ -649,9 +665,9 @@ then
 	echo $(date) "- Deploying Metrics"
 	if [ $AZURE == "true" ]
 	then
-		runuser $SUDOUSER -c "ansible-playbook openshift-ansible/playbooks/byo/openshift-cluster/openshift-metrics.yml -e openshift_metrics_install_metrics=True -e openshift_metrics_cassandra_storage_type=dynamic"
+		runuser -l $SUDOUSER -c "ansible-playbook /home/$SUDOUSER/openshift-ansible/playbooks/byo/openshift-cluster/openshift-metrics.yml -e openshift_metrics_install_metrics=True -e openshift_metrics_cassandra_storage_type=dynamic"
 	else
-		runuser $SUDOUSER -c "ansible-playbook openshift-ansible/playbooks/byo/openshift-cluster/openshift-metrics.yml -e openshift_metrics_install_metrics=True"
+		runuser -l $SUDOUSER -c "ansible-playbook /home/$SUDOUSER/openshift-ansible/playbooks/byo/openshift-cluster/openshift-metrics.yml -e openshift_metrics_install_metrics=True"
 	fi
 	if [ $? -eq 0 ]
 	then
@@ -670,9 +686,9 @@ then
 	echo $(date) "- Deploying Logging"
 	if [ $AZURE == "true" ]
 	then
-		runuser $SUDOUSER -c "ansible-playbook openshift-ansible/playbooks/byo/openshift-cluster/openshift-logging.yml -e openshift_logging_install_logging=True -e openshift_logging_es_pvc_dynamic=true"
+		runuser -l $SUDOUSER -c "ansible-playbook /home/$SUDOUSER/openshift-ansible/playbooks/byo/openshift-cluster/openshift-logging.yml -e openshift_logging_install_logging=True -e openshift_logging_es_pvc_dynamic=true"
 	else
-		runuser $SUDOUSER -c "ansible-playbook openshift-ansible/playbooks/byo/openshift-cluster/openshift-logging.yml -e openshift_logging_install_logging=True"
+		runuser -l $SUDOUSER -c "ansible-playbook /home/$SUDOUSER/openshift-ansible/playbooks/byo/openshift-cluster/openshift-logging.yml -e openshift_logging_install_logging=True"
 	fi
 	if [ $? -eq 0 ]
 	then

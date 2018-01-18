@@ -26,18 +26,24 @@ else
     yum -y install wget git net-tools bind-utils iptables-services bridge-utils bash-completion httpd-tools kexec-tools sos psacct
     yum -y install cloud-utils-growpart.noarch
     yum -y update --exclude=WALinuxAgent
-    yum -y install centos-release-openshift-origin37.noarch
-    yum -y install origin-excluder origin-docker-excluder
+    #yum -y install centos-release-openshift-origin37.noarch
+    #yum -y install origin-excluder origin-docker-excluder
 
-    origin-excluder unexclude
+    #origin-excluder unexclude
 
     # Only install Ansible and pyOpenSSL on Master-0 Node
+    # python-passlib needed for metrics
 
     if hostname -f|grep -- "-0" >/dev/null
     then
-       echo $(date) " - Installing Ansible and pyOpenSSL"
-       yum -y --enablerepo=epel install ansible pyOpenSSL
+       echo $(date) " - Installing Ansible, pyOpenSSL and python-passlib"
+       yum -y --enablerepo=epel install ansible pyOpenSSL python-passlib
     fi
+
+    # Install java to support metrics
+    echo $(date) " - Installing Java"
+
+    yum -y install java-1.8.0-openjdk-headless
 
     # Grow Root File System
     echo $(date) " - Grow Root FS"
@@ -52,9 +58,9 @@ else
     xfs_growfs $rootdev
 
     # Install OpenShift utilities
-    echo $(date) " - Installing OpenShift utilities"
+    #echo $(date) " - Installing OpenShift utilities"
 
-    yum -y install atomic-openshift-utils
+    #yum -y install atomic-openshift-utils
 
     # Install Docker 1.12.x
     echo $(date) " - Installing Docker 1.12.x"

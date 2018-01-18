@@ -17,10 +17,10 @@ else
     yum -y install wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct
     yum -y install cloud-utils-growpart.noarch
     yum -y update --exclude=WALinuxAgent
-    yum -y install centos-release-openshift-origin37.noarch
-    yum -y install origin-excluder origin-docker-excluder
+    #yum -y install centos-release-openshift-origin37.noarch
+    #yum -y install origin-excluder origin-docker-excluder
 
-    origin-excluder unexclude
+    #origin-excluder unexclude
 
     # Grow Root File System
     echo $(date) " - Grow Root FS"
@@ -44,7 +44,7 @@ fi
 # Create thin pool logical volume for Docker
 echo $(date) " - Creating thin pool logical volume for Docker and starting service"
 
-DOCKERVG=$( parted -m /dev/sda print all 2>/dev/null | grep unknown | grep /dev/sd | cut -d':' -f1 )
+DOCKERVG=$( parted -m /dev/sda print all 2>/dev/null | grep unknown | grep /dev/sd | cut -d':' -f1  | awk 'NR==1' )
 
 echo "DEVS=${DOCKERVG}" >> /etc/sysconfig/docker-storage-setup
 echo "VG=docker-vg" >> /etc/sysconfig/docker-storage-setup
