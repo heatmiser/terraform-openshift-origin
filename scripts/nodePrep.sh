@@ -12,8 +12,13 @@ if [ -f /run/ostree-booted ]; then
 else
     # Install base packages and update system to latest packages
     echo $(date) " - Non Atomic Host system"
+	
+	# Install EPEL repository
+    echo $(date) " - Installing EPEL"
+    yum -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+    sed -i -e "s/^enabled=1/enabled=0/" /etc/yum.repos.d/epel.repo
+	
     echo $(date) " - Install base packages and update system to latest packages"
-
     yum -y install wget git net-tools bind-utils iptables-services bridge-utils bash-completion kexec-tools sos psacct
     yum -y install cloud-utils-growpart.noarch
     yum -y update --exclude=WALinuxAgent
